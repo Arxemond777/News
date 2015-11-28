@@ -1,0 +1,6 @@
+.table {
+    color: green;
+}
+
+#style-captcha {width: 1ch; text-align: center; word-wrap: break-word; font-size: 11px}
+#link-captcha {color:greenyellow; text-decoration: none;}
