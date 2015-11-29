@@ -4,13 +4,13 @@ class captcha{
 
     public function createCaptcha(){
         $captcha = '';
-        $symbol = 'abcdefg1234567890';
+        $symbol = '0';
         $width = 420;
         $height = 70;
         $font = 'fonts/bellb.ttf';
         $fontsize = 20;
 
-        $captchaLength = rand(5,7);
+        $captchaLength = rand(1,1);
         $im = imagecreatetruecolor($width, $height);
         $bg = imagecolorallocatealpha($im, 0, 0, 0, 127);
         imagefill($im, 0, 0, $bg);

@@ -21,36 +21,6 @@
         <option value="1" <?= !empty($_POST['category']) && $_POST['category'] == 1 ? 'selected="selected"' : ''?>>Политика</option>
         <option value="2" <?= !empty($_POST['category']) && $_POST['category'] == 2 ? 'selected="selected"' : ''?>>Культура</option>
         <option value="3" <?= !empty($_POST['category']) && $_POST['category'] == 3 ? 'selected="selected"' : ''?>>Спорт</option>
-        <?php
-            if(!empty($_POST['category'])){
-
-//                echo $_POST['category']==1 ? '<option value="1" selected="selected">Политика</option>' : '<option value="1">Политика</option>';
-//                echo $_POST['category']==2 ? '<option value="2" selected="selected">Культура</option>' : '<option value="2">Культура</option>';
-//                echo $_POST['category']==3 ? '<option value="3" selected="selected">Спорт</option>'    : '<option value="3">Спорт</option>';
-
-//                echo '  <option value="1" '.$_POST['category']==1 ?  'selected="selected"' : 'selected=" "'.'>Политика</option>
-//                        <option value="2" '.$_POST['category']==2 ? 'selected="selected"' : 'selected=" "'.'>Культура</option>
-//                        <option value="3" '.$_POST['category']==3 ? 'selected="selected"' : 'selected=" "'.'>Спорт</option>
-//                         ';
-//                if($_POST['category'] == 1){
-//                    echo '  <option value="1" selected="selected">Политика</option>
-//                            <option value="2">Культура</option>
-//                            <option value="3">Спорт</option>
-//                         ';
-//                } elseif($_POST['category'] == 2){
-//                    echo '  <option value="1">Политика</option>
-//                            <option value="2" selected="selected">Культура</option>
-//                            <option value="3">Спорт</option>
-//                         ';
-//                } elseif($_POST['category'] == 3){
-//                    echo '
-//                            <option value="1">Политика</option>
-//                            <option value="2">Культура</option>
-//                            <option value="3" selected="selected">Спорт</option>
-//                         ';
-//                }
-            }
-        ?>
     </select>
     <br />
     Текст новости:<br />
@@ -77,26 +47,18 @@
 </form>
 
 <?php
-echo "<script type='text/javascript'>
-    /*$(document).ready(function(){
-        var val = document.getElementById('category');
-        //return val.value;
-        alert(val.value);
-    });*/
-</script>";
 session_start();
 if($_POST['captcha']!=$_SESSION['captcha']) {
   die('Error Captcha');
 } else {
-  include('NewsDB.class.php');
-  if(isset($_POST['submit'])){
-    if(!empty($_POST['title']) && !empty($_POST['description']) && !empty($_POST['source'])){
-      //header("Location: ".$_SERVER['HTTP_REFERER']."");
-      $obj->saveNews($_POST['title'], $_POST['category'], $_POST['description'], $_POST['source']);
-    } else {
-      echo "Не заполенны все поля";die;
+    include('NewsDB.class.php');
+    if(isset($_POST['submit'])){
+        if(!empty($_POST['title']) && !empty($_POST['description']) && !empty($_POST['source'])){
+            $obj->saveNews($_POST['title'], $_POST['category'], $_POST['description'], $_POST['source']);
+        } else {
+            echo "Не заполенны все поля";die;
+        }
     }
-  }
 }
 ?>
 </body>

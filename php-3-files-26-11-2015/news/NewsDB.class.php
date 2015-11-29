@@ -1,5 +1,6 @@
 <?php
-//ini_set('display_errors',1);//TODO
+ini_set('display_errors',2);//TODO
+date_default_timezone_set('Etc/GMT+3');//TODO
 
 class MyClass {
 
@@ -14,8 +15,8 @@ $obj->__autoload('INewsDB.class');
 
 class NewsDB implements INewsDB {
 
-    private $link;
-    private $dblocation = 'localhost:3306';
+    private $mysqli;
+    private $dblocation = 'localhost';
     public $news;
     public $errMsq = '';
     private $dt;
@@ -25,13 +26,14 @@ class NewsDB implements INewsDB {
     public $date_end;
 
     public function __construct($dbname){
-        $this->link = mysql_connect($this->dblocation, 'root', '');
-        if (!$this->link) {
+
+        $this->mysqli = new mysqli($this->dblocation, 'root', '', $dbname);
+        if (!$this->mysqli) {
             die('Error connection: ' . mysql_error());
         } else {
             //echo 'Suecces conection';
         }
-        if(!mysql_select_db($dbname, $this->link)){
+        if(!mysqli_select_db($this->mysqli, $dbname)){
             if(mysql_query("CREATE DATABASE ".$dbname)){
                 echo '<br> BD '.$dbname.' create success';
             }
@@ -69,33 +71,9 @@ class NewsDB implements INewsDB {
 
     }
 
-    /*public function query($dbname){
-        $this->dt = new DateTime();
-        $date = $this->dt->format('Y-m-d H:i:s');
-        $sql = "INSERT INTO MyGuests(title, category, description, source, datetime)
-                   VALUES
-                   ('title 0', 123, 'lalala', 'alalala', '".$date."')";
-        if(mysql_db_query($dbname, $sql)){
-            echo '<br> INSERT INT MyGuests success <br>';
-            $sql = "SELECT * from test3.MyGuests ORDER BY id DESC limit 2";
-            if(mysql_db_query($dbname, $sql)){
-                $str = '';
-                for($i=0; $i<2; $i++){
-                    for($j=0; $j<6; $j++){
-                        $str .= mysql_result(mysql_db_query($dbname, $sql), $i, $j).' ';
-                    }
-                }
-
-                print_r($str);
-            }
-        } else {
-            echo 'Bad query'.'<br>'.$sql;
-        }
+    /*public function __destruct(){
+        mysql_close($this->mysqli);
     }*/
-
-    public function __destruct(){
-        mysql_close($this->link);
-    }
 
     function saveNews($title, $category, $description, $source){
         $this->dt = new DateTime('now', new DateTimeZone('MSK'));
@@ -110,11 +88,10 @@ class NewsDB implements INewsDB {
     }
 
     function getNews(){
-//        /print_r($_POST);
+       print_r($_POST);
         if(!empty($this->category)){
             $str = '';
             $sql_check_results = 'SELECT MyGuests.id from MyGuests where MyGuests.category = '.$this->category.';';
-            $check_results = '';
             $limit = '';
             if(mysql_query($sql_check_results)){
                 $check_results = mysql_num_rows(mysql_query($sql_check_results));
@@ -123,7 +100,7 @@ class NewsDB implements INewsDB {
             $this->category == 1 ? $this->category = 'Politics' : $this->category;
             $this->category == 2 ? $this->category = 'Culture' : $this->category;
             $this->category == 3 ? $this->category = 'Sport' : $this->category;
-            $sql = "
+            /*$sql = "
                 SELECT
                   MyGuests.id, MyGuests.title,
                   category.name, MyGuests.description,
@@ -131,8 +108,23 @@ class NewsDB implements INewsDB {
                 FROM category, MyGuests
                 where category.id = MyGuests.category and category.name = '".$this->category."'
                 ORDER BY MyGuests.datetime DESC limit ".$limit.";
-            ";
-            if(mysql_query($sql)){
+            ";*/
+            $stp = $this->mysqli->prepare("
+                SELECT
+                  MyGuests.id, MyGuests.title,
+                  category.name, MyGuests.description,
+                  MyGuests.source, MyGuests.datetime
+                FROM category, MyGuests
+                where category.id = MyGuests.category and category.name = '?'
+                ORDER BY MyGuests.datetime DESC limit ?;
+            ");
+            //$stp->bind_param('CN',$this->category);
+            print_r($stp->bind_param("sn", $limit));die;
+
+
+            print_r($stp->execute());die;
+
+            if(mysqli_stmt_execute($sql)){
                 for($i=0; $i<$limit; $i++){
                     if(!empty(mysql_result(mysql_query($sql), $i))){
                         $str .=
@@ -160,6 +152,7 @@ class NewsDB implements INewsDB {
                     </table>
                 ';
             }
+            mysqli_stmt_execute($sql);
         }
 
         if(!empty($this->date_start) || !empty($this->date_end)){
@@ -174,12 +167,11 @@ class NewsDB implements INewsDB {
                     $sql_check_results = "
                       SELECT MyGuests.id from MyGuests
                       where
-                      and MyGuests.datetime > '".date('Y-m-d 00:00:00', strtotime($date_start))."'
+                      MyGuests.datetime > '".date('Y-m-d 00:00:00', strtotime($date_start))."'
                       and MyGuests.datetime < '".date('Y-m-d 23:59:59', strtotime($date_end))."'";
-                    $check_results = '';
                     if(mysql_query($sql_check_results)){
                         $check_results = mysql_num_rows(mysql_query($sql_check_results));
-                        $check_results<5 ? $this->limit = $check_results : $this->limit = 5;
+                        $check_results<5 ? $limit = $check_results : $limit = 5;
                     }
                     $sql = "
                              SELECT
@@ -192,38 +184,34 @@ class NewsDB implements INewsDB {
                              and MyGuests.datetime < '".date('Y-m-d 23:59:59', strtotime($date_end))."'
                              ORDER BY MyGuests.datetime DESC limit ".$limit.";
                            ";
-                    //$sql_check_results = 'SELECT * from MyGuests where ';
                 }
             } elseif (!empty($this->date_start)){
+                //todo test3.MyGuests посмотри на 2 строки ниже
                 $sql_check_results = "
                       SELECT MyGuests.id from MyGuests
                       where
-                      and MyGuests.datetime > '".date('Y-m-d 00:00:00', date('Y-m-d 00:00:00', strtotime($this->date_start))."'";
-                echo $sql_check_results;
-                $check_results = '';
+                      MyGuests.datetime > '".date('Y-m-d 00:00:00', strtotime($this->date_start))."';";
                 if(mysql_query($sql_check_results)){
                     $check_results = mysql_num_rows(mysql_query($sql_check_results));
-                    $check_results<5 ? $this->limit = $check_results : $this->limit = 5;
+                    $check_results<5 ? $limit = $check_results : $limit = 5;
                 }
                 $sql = "
-                             SELECT
-                               MyGuests.id, MyGuests.title,
-                               category.name, MyGuests.description,
-                               MyGuests.source, MyGuests.datetime
-                             FROM category, MyGuests
-                             where category.id = MyGuests.category
-                             and MyGuests.datetime > '".date('Y-m-d 00:00:00', strtotime($this->date_start))."'
-                             ORDER BY MyGuests.datetime DESC limit ".$this->limit.";
-                           ";
+                         SELECT
+                           MyGuests.id, MyGuests.title,
+                           category.name, MyGuests.description,
+                           MyGuests.source, MyGuests.datetime
+                         FROM category INNER JOIN MyGuests ON category.id = MyGuests.category
+                         where MyGuests.datetime > '".date('Y-m-d 00:00:00', strtotime($this->date_start))."'
+                         ORDER BY MyGuests.datetime DESC limit ".$limit.";
+                       ";
             } elseif(!empty($this->date_end)){
                 $sql_check_results = "
                       SELECT MyGuests.id from MyGuests
                       where
-                      and MyGuests.datetime < '".date('Y-m-d 23:59:59', strtotime($date_end))."';";
-                $check_results = '';
+                      MyGuests.datetime < '".date('Y-m-d 23:59:59', strtotime($this->date_end))."';";
                 if(mysql_query($sql_check_results)){
                     $check_results = mysql_num_rows(mysql_query($sql_check_results));
-                    $check_results<5 ? $this->limit = $check_results : $this->limit = 5;
+                    $check_results<5 ? $limit = $check_results : $limit = 5;
                 }
                 $sql = "
                              SELECT
